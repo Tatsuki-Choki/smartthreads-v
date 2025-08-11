@@ -6,9 +6,28 @@ export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient()
   
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Authorizationヘッダーからトークンを取得
+    const authHeader = request.headers.get('authorization')
+    let user = null
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      const { data: { user: tokenUser }, error } = await supabase.auth.getUser(token)
+      if (!error) {
+        user = tokenUser
+      }
+    }
+
+    if (!user) {
+      // フォールバック: クッキーから認証を試行
+      const { data: { user: cookieUser }, error: authError } = await supabase.auth.getUser()
+      if (!authError) {
+        user = cookieUser
+      }
+    }
     
-    if (authError || !user) {
+    if (!user) {
+      console.log('No user found in API')
       return NextResponse.json(
         { error: 'ログインが必要です' },
         { status: 401 }

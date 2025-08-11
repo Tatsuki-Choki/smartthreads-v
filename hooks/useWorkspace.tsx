@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { authenticatedFetch } from '@/lib/supabase/client-server'
 
 interface Workspace {
   id: string
@@ -36,7 +37,7 @@ export function useWorkspace() {
     if (!user) return
 
     try {
-      const response = await fetch('/api/workspaces')
+      const response = await authenticatedFetch('/api/workspaces')
       const data = await response.json()
 
       if (!response.ok) {
@@ -73,7 +74,7 @@ export function useWorkspace() {
   // Threadsアカウント一覧を取得
   const fetchThreadsAccounts = async (workspaceId: string) => {
     try {
-      const response = await fetch(`/api/workspaces/${workspaceId}/threads-accounts`)
+      const response = await authenticatedFetch(`/api/workspaces/${workspaceId}/threads-accounts`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -89,11 +90,8 @@ export function useWorkspace() {
 
   // ワークスペース作成
   const createWorkspace = async (name: string, skipRefetch = false): Promise<Workspace> => {
-    const response = await fetch('/api/workspaces', {
+    const response = await authenticatedFetch('/api/workspaces', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ name }),
     })
 
@@ -111,7 +109,7 @@ export function useWorkspace() {
 
   // Threads連携開始
   const connectThreads = async (workspaceId: string) => {
-    const response = await fetch(`/api/auth/threads?workspace_id=${workspaceId}`)
+    const response = await authenticatedFetch(`/api/auth/threads?workspace_id=${workspaceId}`)
     const data = await response.json()
 
     if (!response.ok) {
@@ -124,7 +122,7 @@ export function useWorkspace() {
 
   // Threadsアカウント削除
   const removeThreadsAccount = async (workspaceId: string, accountId: string) => {
-    const response = await fetch(`/api/workspaces/${workspaceId}/threads-accounts?account_id=${accountId}`, {
+    const response = await authenticatedFetch(`/api/workspaces/${workspaceId}/threads-accounts?account_id=${accountId}`, {
       method: 'DELETE',
     })
 

@@ -11,20 +11,31 @@ export function createServerSupabaseClient() {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value
+          const cookie = cookieStore.get(name)
+          return cookie?.value
         },
         set(name: string, value: string, options) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookieStore.set({
+              name,
+              value,
+              ...options,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+            })
           } catch (error) {
-            // サーバーコンポーネントでのクッキー設定エラーを無視
+            console.error('Cookie set error:', error)
           }
         },
         remove(name: string, options) {
           try {
-            cookieStore.set({ name, value: '', ...options })
+            cookieStore.delete({
+              name,
+              ...options,
+            })
           } catch (error) {
-            // サーバーコンポーネントでのクッキー削除エラーを無視
+            console.error('Cookie remove error:', error)
           }
         },
       },
