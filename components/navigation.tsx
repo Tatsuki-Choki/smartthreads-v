@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { clsx } from 'clsx'
 import { 
   HomeIcon, 
@@ -12,6 +12,7 @@ import {
   LogOutIcon
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/auth-context'
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: HomeIcon },
@@ -23,6 +24,13 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { signOut } = useAuth()
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/')
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -50,7 +58,11 @@ export function Navigation() {
         })}
       </nav>
       <div className="px-4 pb-4">
-        <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground"
+          onClick={handleLogout}
+        >
           <LogOutIcon className="mr-3 h-5 w-5" />
           ログアウト
         </Button>

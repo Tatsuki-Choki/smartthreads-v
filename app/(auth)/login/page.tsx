@@ -1,25 +1,34 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { signIn } from '@/lib/auth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
     
-    // TODO: Supabase認証実装
-    setTimeout(() => {
-      setLoading(false)
-      alert('ログイン機能は後で実装予定です')
-    }, 1000)
+    const result = await signIn(email, password)
+    
+    if (result.success) {
+      router.push('/dashboard')
+    } else {
+      setError(result.error || 'ログインに失敗しました')
+    }
+    
+    setLoading(false)
   }
 
   return (
@@ -33,6 +42,11 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 メールアドレス

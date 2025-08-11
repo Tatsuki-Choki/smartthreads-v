@@ -24,7 +24,9 @@
       "Bash(git branch:*)",
       "Bash(git add:*)",
       "Bash(npx vercel:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npx supabase:*)",
+      "WebFetch(domain:vercel.com)"
     ],
     "deny": []
   }
