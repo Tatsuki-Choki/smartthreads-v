@@ -130,9 +130,18 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading && !user) {
+  if (loading) {
     return <div className="flex items-center justify-center p-8">読み込み中...</div>
   }
+
+  // デバッグ情報
+  console.log('Settings Debug:', {
+    user: !!user,
+    currentWorkspace: currentWorkspace?.id,
+    workspacesCount: workspaces.length,
+    isConnecting,
+    error
+  })
 
   return (
     <div className="space-y-6">
@@ -164,10 +173,16 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* 現在のワークスペース */}
-          {currentWorkspace && (
+          {currentWorkspace ? (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="font-medium text-blue-900">現在のワークスペース</p>
               <p className="text-sm text-blue-700">{currentWorkspace.name}</p>
+              <p className="text-xs text-blue-600">ID: {currentWorkspace.id}</p>
+            </div>
+          ) : (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+              <p className="font-medium text-gray-700">ワークスペースを読み込み中...</p>
+              <p className="text-sm text-gray-600">初回アクセス時は自動でワークスペースを作成します</p>
             </div>
           )}
 
@@ -261,9 +276,13 @@ export default function SettingsPage() {
                 Threadsアカウントと連携して投稿機能を有効にしてください
               </p>
             </div>
-            <Button onClick={handleConnectThreads} disabled={isConnecting || !currentWorkspace}>
+            <Button 
+              onClick={handleConnectThreads} 
+              disabled={isConnecting || !currentWorkspace}
+              title={!currentWorkspace ? 'ワークスペースを読み込み中...' : ''}
+            >
               <ExternalLinkIcon className="mr-2 h-4 w-4" />
-              {isConnecting ? '連携中...' : 'Threadsと連携'}
+              {isConnecting ? '連携中...' : !currentWorkspace ? '読み込み中...' : 'Threadsと連携'}
             </Button>
           </div>
 

@@ -48,10 +48,25 @@ export function useWorkspace() {
       // 最初のワークスペースを現在のワークスペースに設定
       if (data.workspaces.length > 0 && !currentWorkspace) {
         setCurrentWorkspace(data.workspaces[0])
+      } else if (data.workspaces.length === 0) {
+        // ワークスペースが存在しない場合、デフォルトワークスペースを作成
+        await createDefaultWorkspace()
       }
     } catch (err) {
       console.error('ワークスペース取得エラー:', err)
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
+    }
+  }
+
+  // デフォルトワークスペース作成
+  const createDefaultWorkspace = async () => {
+    try {
+      const defaultName = user?.email?.split('@')[0] + 'のワークスペース' || 'マイワークスペース'
+      const workspace = await createWorkspace(defaultName, true) // リフェッチをスキップ
+      setWorkspaces([workspace])
+      setCurrentWorkspace(workspace)
+    } catch (err) {
+      console.error('デフォルトワークスペース作成エラー:', err)
     }
   }
 
@@ -73,7 +88,7 @@ export function useWorkspace() {
   }
 
   // ワークスペース作成
-  const createWorkspace = async (name: string): Promise<Workspace> => {
+  const createWorkspace = async (name: string, skipRefetch = false): Promise<Workspace> => {
     const response = await fetch('/api/workspaces', {
       method: 'POST',
       headers: {
@@ -88,7 +103,9 @@ export function useWorkspace() {
       throw new Error(data.error || 'ワークスペースの作成に失敗しました')
     }
 
-    await fetchWorkspaces() // リストを更新
+    if (!skipRefetch) {
+      await fetchWorkspaces() // リストを更新
+    }
     return data.workspace
   }
 
