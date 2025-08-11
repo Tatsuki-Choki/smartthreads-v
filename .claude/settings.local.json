@@ -26,7 +26,8 @@
       "Bash(npx vercel:*)",
       "Bash(rm:*)",
       "Bash(npx supabase:*)",
-      "WebFetch(domain:vercel.com)"
+      "WebFetch(domain:vercel.com)",
+      "Bash(gh:*)"
     ],
     "deny": []
   }
