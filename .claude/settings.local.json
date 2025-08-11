@@ -22,7 +22,9 @@
       "Bash(claude mcp add:*)",
       "Bash(git init:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npx vercel:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
