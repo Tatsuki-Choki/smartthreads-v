@@ -1,0 +1,60 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { clsx } from 'clsx'
+import { 
+  HomeIcon, 
+  PlusIcon, 
+  ClockIcon, 
+  HistoryIcon,
+  SettingsIcon,
+  LogOutIcon
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+const navigation = [
+  { name: 'ダッシュボード', href: '/dashboard', icon: HomeIcon },
+  { name: '新規投稿', href: '/posts/new', icon: PlusIcon },
+  { name: '予約投稿', href: '/posts/scheduled', icon: ClockIcon },
+  { name: '投稿履歴', href: '/posts/history', icon: HistoryIcon },
+  { name: '設定', href: '/settings', icon: SettingsIcon },
+]
+
+export function Navigation() {
+  const pathname = usePathname()
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-center h-16 px-4">
+        <h1 className="text-xl font-bold">SmartThreads</h1>
+      </div>
+      <nav className="flex-1 px-4 pb-4 space-y-2">
+        {navigation.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={clsx(
+                'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+              {item.name}
+            </Link>
+          )
+        })}
+      </nav>
+      <div className="px-4 pb-4">
+        <Button variant="ghost" className="w-full justify-start text-muted-foreground">
+          <LogOutIcon className="mr-3 h-5 w-5" />
+          ログアウト
+        </Button>
+      </div>
+    </div>
+  )
+}

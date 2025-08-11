@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app:*)",
+      "Bash(mv:*)",
+      "Bash(true)",
+      "Bash(rmdir:*)",
+      "mcp__serena__activate_project",
+      "Bash(npx:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude mcp add filesystem -s user:*)",
+      "Bash(claude mcp add supabase -s user:*)",
+      "Bash(claude mcp add github -s user:*)",
+      "Bash(claude mcp add fetch -s:*)",
+      "Bash(npm install:*)",
+      "Bash(claude mcp add playwright -s user:*)",
+      "Bash(claude mcp add openapi -s user:*)",
+      "Bash(claude mcp add git:*)",
+      "Bash(npm run dev:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
