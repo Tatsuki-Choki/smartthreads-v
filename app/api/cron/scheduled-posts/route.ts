@@ -181,7 +181,7 @@ async function publishToThreads(
         return { success: false, error: mediaResponse.error }
       }
       
-      mediaContainerId = mediaResponse.containerId
+      mediaContainerId = mediaResponse.containerId || null
       
       // メディアのアップロード完了を待つ
       await waitForMediaProcessing(mediaContainerId!, accessToken)
