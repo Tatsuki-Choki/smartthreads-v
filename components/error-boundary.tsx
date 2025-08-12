@@ -4,7 +4,6 @@ import { Component, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
-import { logSystemEvent } from '@/lib/monitoring/events';
 
 interface Props {
   children: ReactNode;
