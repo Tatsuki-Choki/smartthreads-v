@@ -682,7 +682,7 @@ export default function NewPostPage() {
                       {threadPosts.length > 1 && (
                         <Button
                           type="button"
-                          size="icon"
+                          size="sm"
                           variant="ghost"
                           onClick={() => removeThreadPost(index)}
                         >
