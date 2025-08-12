@@ -1,12 +1,5 @@
 {
-  "name": "smartthreads-v",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "crons": [
-    {
-      "path": "/api/auto-reply/queue/process",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "installCommand": "npm install"
 }
