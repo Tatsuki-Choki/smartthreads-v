@@ -39,23 +39,41 @@ export async function signUp(email: string, password: string): Promise<AuthResul
 // サインイン
 export async function signIn(email: string, password: string): Promise<AuthResult> {
   try {
+    console.log('Supabase signIn開始:', { email })
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
+    console.log('Supabase signIn結果:', { 
+      success: !error, 
+      user: data?.user?.email,
+      session: !!data?.session,
+      error: error?.message 
+    })
+
     if (error) {
+      console.error('Supabase認証エラー:', error)
       return {
         success: false,
         error: getJapaneseErrorMessage(error)
       }
     }
 
+    // セッションの確認
+    const { data: sessionData } = await supabase.auth.getSession()
+    console.log('現在のセッション:', {
+      hasSession: !!sessionData.session,
+      userEmail: sessionData.session?.user?.email
+    })
+
     return {
       success: true,
       user: data.user
     }
   } catch (error) {
+    console.error('予期しないエラー:', error)
     return {
       success: false,
       error: 'ログイン中にエラーが発生しました'

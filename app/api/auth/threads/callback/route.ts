@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { exchangeCodeForToken, ThreadsAPI } from '@/lib/threads/api'
+import { getBaseUrl } from '@/lib/url'
+import { encrypt } from '@/lib/crypto'
 
 // Threads OAuth コールバック処理
 export async function GET(request: NextRequest) {
@@ -43,12 +45,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${request.nextUrl.origin}/settings?error=workspace_access&message=${encodeURIComponent('ワークスペースへのアクセス権限がありません')}`)
     }
 
-    // リダイレクトURIを生成
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || 'http://localhost:3002'
-    
-    const redirectUri = `${baseUrl}/api/auth/threads/callback`
+    // リダイレクトURIを生成（環境に依存せず一貫したベースURLを使用）
+    const redirectUri = `${getBaseUrl()}/api/auth/threads/callback`
 
     // 認証コードをアクセストークンに交換
     const tokenInfo = await exchangeCodeForToken(code, redirectUri)
@@ -61,14 +59,24 @@ export async function GET(request: NextRequest) {
     const longLivedAPI = new ThreadsAPI(longLivedToken.access_token)
     const userInfo = await longLivedAPI.getUserInfo()
 
-    // データベースにThreadsアカウント情報を保存
+    // データベースにThreadsアカウント情報を保存（トークンは暗号化）
+    let tokenToStore: string
+    try {
+      const enc = encrypt(longLivedToken.access_token)
+      // 格納形式はJSON文字列（将来復号用にiv/tagも含める）
+      tokenToStore = JSON.stringify(enc)
+    } catch (e) {
+      console.error('トークン暗号化エラー:', e)
+      return NextResponse.redirect(`${request.nextUrl.origin}/settings?error=security&message=${encodeURIComponent('セキュアな保存に失敗しました')}`)
+    }
+
     const { error: insertError } = await supabase
       .from('threads_accounts')
       .upsert({
         workspace_id: workspaceId,
         threads_user_id: userInfo.id,
         username: userInfo.username,
-        access_token: longLivedToken.access_token, // TODO: 暗号化
+        access_token: tokenToStore,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'workspace_id,threads_user_id'

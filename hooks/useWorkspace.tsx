@@ -29,6 +29,8 @@ export function useWorkspace() {
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null)
   const [threadsAccounts, setThreadsAccounts] = useState<ThreadsAccount[]>([])
   const [loading, setLoading] = useState(true)
+  const [checkingThreads, setCheckingThreads] = useState(false)
+  const [threadsLoaded, setThreadsLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
 
@@ -44,13 +46,16 @@ export function useWorkspace() {
         throw new Error(data.error || 'ワークスペースの取得に失敗しました')
       }
 
+      console.log('取得したワークスペース:', data.workspaces)
       setWorkspaces(data.workspaces)
       
       // 最初のワークスペースを現在のワークスペースに設定
       if (data.workspaces.length > 0 && !currentWorkspace) {
+        console.log('現在のワークスペースを設定:', data.workspaces[0])
         setCurrentWorkspace(data.workspaces[0])
       } else if (data.workspaces.length === 0) {
         // ワークスペースが存在しない場合、デフォルトワークスペースを作成
+        console.log('ワークスペースが存在しないため、デフォルトを作成')
         await createDefaultWorkspace()
       }
     } catch (err) {
@@ -73,18 +78,34 @@ export function useWorkspace() {
 
   // Threadsアカウント一覧を取得
   const fetchThreadsAccounts = async (workspaceId: string) => {
+    setCheckingThreads(true)
+    setThreadsLoaded(false)
     try {
-      const response = await authenticatedFetch(`/api/workspaces/${workspaceId}/threads-accounts`)
+      console.log('🔍 fetchThreadsAccounts開始:', workspaceId)
+      const apiUrl = `/api/workspaces/${workspaceId}/threads-accounts`
+      console.log('🔍 APIコール:', apiUrl)
+      
+      const response = await authenticatedFetch(apiUrl)
+      console.log('🔍 API レスポンス ステータス:', response.status)
+      
       const data = await response.json()
+      console.log('🔍 API レスポンス データ:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Threadsアカウントの取得に失敗しました')
       }
 
-      setThreadsAccounts(data.accounts)
+      console.log('🔍 取得したアカウント数:', data.accounts?.length || 0)
+      console.log('🔍 アカウント詳細:', data.accounts)
+      setThreadsAccounts(data.accounts || [])
+      setThreadsLoaded(true)
     } catch (err) {
-      console.error('Threadsアカウント取得エラー:', err)
+      console.error('❌ Threadsアカウント取得エラー:', err)
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
+      setThreadsAccounts([])
+      setThreadsLoaded(true)
+    } finally {
+      setCheckingThreads(false)
     }
   }
 
@@ -107,17 +128,14 @@ export function useWorkspace() {
     return data.workspace
   }
 
-  // Threads連携開始
+  // Threads連携開始（連携ページへ遷移）
   const connectThreads = async (workspaceId: string) => {
-    const response = await authenticatedFetch(`/api/auth/threads?workspace_id=${workspaceId}`)
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Threads連携の開始に失敗しました')
+    // threads-setupページへ遷移
+    // workspaceIdをセッションストレージに保存して連携ページで使用
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('workspace_id_for_threads', workspaceId)
+      window.location.href = '/threads-setup'
     }
-
-    // OAuth認証ページにリダイレクト
-    window.location.href = data.authUrl
   }
 
   // Threadsアカウント削除
@@ -155,6 +173,8 @@ export function useWorkspace() {
     setCurrentWorkspace,
     threadsAccounts,
     loading,
+    checkingThreads,
+    threadsLoaded,
     error,
     createWorkspace,
     connectThreads,

@@ -1,25 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ClockIcon, EditIcon, TrashIcon } from 'lucide-react'
+import { ClockIcon, EditIcon, TrashIcon, CopyIcon } from 'lucide-react'
 import Link from 'next/link'
-
-// TODO: 実際のデータはSupabaseから取得
-const mockScheduledPosts = [
-  {
-    id: '1',
-    content: '明日の朝に投稿予定のコンテンツです。新しい機能についてのお知らせです。',
-    scheduledAt: '2024-01-16T09:00:00Z',
-    createdAt: '2024-01-15T14:30:00Z',
-  },
-  {
-    id: '2',
-    content: '来週の月曜日に投稿予定です。週間レポートを共有します。',
-    scheduledAt: '2024-01-22T10:00:00Z',
-    createdAt: '2024-01-15T16:45:00Z',
-  },
-]
+import { useRouter } from 'next/navigation'
+import { useWorkspace } from '@/hooks/useWorkspace'
+import { authenticatedFetch } from '@/lib/supabase/client-server'
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -50,22 +38,83 @@ const isOverdue = (dateString: string) => {
 }
 
 export default function ScheduledPostsPage() {
-  const handleEdit = (postId: string) => {
-    // TODO: 編集機能実装
-    alert(`投稿 ${postId} の編集機能は後で実装予定です`)
-  }
+  const router = useRouter()
+  const { currentWorkspace } = useWorkspace()
+  const [posts, setPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleDelete = (postId: string) => {
-    // TODO: 削除機能実装
-    if (confirm('この予約投稿を削除しますか？')) {
-      alert(`投稿 ${postId} の削除機能は後で実装予定です`)
+  const fetchPosts = async () => {
+    if (!currentWorkspace) return
+    setLoading(true)
+    setError(null)
+    try {
+      const resp = await authenticatedFetch(`/api/posts?workspace_id=${currentWorkspace.id}&status=scheduled`)
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data?.error || '取得に失敗しました')
+      setPosts(data.posts || [])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'エラーが発生しました')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handlePostNow = (postId: string) => {
-    // TODO: 即座投稿機能実装
-    if (confirm('この投稿を今すぐ投稿しますか？')) {
-      alert(`投稿 ${postId} の即座投稿機能は後で実装予定です`)
+  useEffect(() => {
+    fetchPosts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWorkspace?.id])
+
+  const handleEdit = (postId: string) => {
+    router.push(`/posts/scheduled/${postId}/edit`)
+  }
+
+  const handleDuplicate = async (postId: string) => {
+    try {
+      // 投稿データを取得
+      const resp = await authenticatedFetch(`/api/posts/${postId}`)
+      if (!resp.ok) {
+        throw new Error('投稿データの取得に失敗しました')
+      }
+      const postData = await resp.json()
+      
+      // LocalStorageに保存
+      const duplicateData = {
+        content: postData.content,
+        isThread: false,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('duplicatePost', JSON.stringify(duplicateData))
+      
+      // 新規投稿ページへ遷移
+      router.push('/posts/new?mode=duplicate')
+    } catch (error) {
+      console.error('複製エラー:', error)
+      alert('投稿の複製に失敗しました')
+    }
+  }
+
+  const handleDelete = async (postId: string) => {
+    if (!confirm('この予約投稿を削除しますか？')) return
+    try {
+      const resp = await authenticatedFetch(`/api/posts/${postId}`, { method: 'DELETE' })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data?.error || '削除に失敗しました')
+      await fetchPosts()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '削除エラー')
+    }
+  }
+
+  const handlePostNow = async (postId: string) => {
+    if (!confirm('この投稿を今すぐ投稿しますか？')) return
+    try {
+      const resp = await authenticatedFetch(`/api/posts/${postId}/publish`, { method: 'POST' })
+      const data = await resp.json()
+      if (!resp.ok) throw new Error(data?.error || '投稿に失敗しました')
+      await fetchPosts()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '投稿エラー')
     }
   }
 
@@ -86,7 +135,15 @@ export default function ScheduledPostsPage() {
       </div>
 
       <div className="space-y-4">
-        {mockScheduledPosts.length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="pt-6">読み込み中...</CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="pt-6 text-red-600">{error}</CardContent>
+          </Card>
+        ) : posts.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">
@@ -99,19 +156,19 @@ export default function ScheduledPostsPage() {
             </CardContent>
           </Card>
         ) : (
-          mockScheduledPosts.map((post) => (
-            <Card key={post.id} className={isOverdue(post.scheduledAt) ? 'border-red-200' : ''}>
+          posts.map((post) => (
+            <Card key={post.id} className={post.scheduled_at && isOverdue(post.scheduled_at) ? 'border-red-200' : ''}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <ClockIcon className={`h-5 w-5 ${isOverdue(post.scheduledAt) ? 'text-red-600' : 'text-blue-600'}`} />
+                    <ClockIcon className={`h-5 w-5 ${post.scheduled_at && isOverdue(post.scheduled_at) ? 'text-red-600' : 'text-blue-600'}`} />
                     <div>
                       <CardTitle className="text-lg">
                         予約投稿
                       </CardTitle>
                       <CardDescription>
-                        {formatDate(post.scheduledAt)}
-                        {isOverdue(post.scheduledAt) && (
+                        {post.scheduled_at ? formatDate(post.scheduled_at) : '日時未設定'}
+                        {post.scheduled_at && isOverdue(post.scheduled_at) && (
                           <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
                             期限切れ
                           </span>
@@ -127,7 +184,7 @@ export default function ScheduledPostsPage() {
                   
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="text-xs text-muted-foreground">
-                      作成日時: {formatDate(post.createdAt)}
+                      作成日時: {formatDate(post.created_at)}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -137,6 +194,14 @@ export default function ScheduledPostsPage() {
                       >
                         <EditIcon className="mr-1 h-3 w-3" />
                         編集
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDuplicate(post.id)}
+                      >
+                        <CopyIcon className="mr-1 h-3 w-3" />
+                        複製
                       </Button>
                       <Button
                         size="sm"

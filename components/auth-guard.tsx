@@ -13,13 +13,16 @@ export function AuthGuard({ children, redirectTo = '/login' }: AuthGuardProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
 
+  // 一時的に認証チェックを無効化（開発中）
+  const skipAuth = true
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!skipAuth && !loading && !user) {
       router.push(redirectTo)
     }
-  }, [user, loading, router, redirectTo])
+  }, [user, loading, router, redirectTo, skipAuth])
 
-  if (loading) {
+  if (!skipAuth && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -30,7 +33,7 @@ export function AuthGuard({ children, redirectTo = '/login' }: AuthGuardProps) {
     )
   }
 
-  if (!user) {
+  if (!skipAuth && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

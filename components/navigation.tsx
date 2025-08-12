@@ -9,7 +9,12 @@ import {
   ClockIcon, 
   HistoryIcon,
   SettingsIcon,
-  LogOutIcon
+  LogOutIcon,
+  MessageCircle,
+  FileText,
+  List,
+  Bot,
+  BarChart3
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
@@ -19,6 +24,12 @@ const navigation = [
   { name: '新規投稿', href: '/posts/new', icon: PlusIcon },
   { name: '予約投稿', href: '/posts/scheduled', icon: ClockIcon },
   { name: '投稿履歴', href: '/posts/history', icon: HistoryIcon },
+  { name: 'テンプレート', href: '/auto-reply/templates', icon: FileText },
+  { name: '自動返信ルール', href: '/auto-reply/rules', icon: Bot },
+  { name: '返信プール', href: '/auto-reply/pools', icon: List },
+  { name: '返信履歴', href: '/auto-reply/history', icon: MessageCircle },
+  { name: '分析', href: '/auto-reply/analytics', icon: BarChart3 },
+  { name: 'Webhookテスト', href: '/auto-reply/test', icon: List },
   { name: '設定', href: '/settings', icon: SettingsIcon },
 ]
 

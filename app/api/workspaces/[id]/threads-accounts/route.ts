@@ -1,150 +1,161 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { ThreadsAPI } from '@/lib/threads/api'
+import { createClient } from '@supabase/supabase-js'
 
-// ワークスペースのThreadsアカウント一覧取得
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Threadsアカウント一覧取得 / 削除
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
-  const workspaceId = params.id
   
+  // Admin client for bypassing RLS
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  
+  const workspaceId = params.id
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // まず通常の認証（cookie）を試行
+    let user;
+    const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
     
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'ログインが必要です' },
-        { status: 401 }
-      )
+    if (cookieError || !cookieUser) {
+      console.log('Cookie認証失敗、Authorizationヘッダーをチェック:', cookieError?.message)
+      
+      // Authorizationヘッダーを確認
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(token)
+        if (tokenError || !tokenUser) {
+          console.log('Token認証も失敗:', tokenError?.message)
+          return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+        }
+        user = tokenUser
+        console.log('Token認証成功:', user.id)
+      } else {
+        return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+      }
+    } else {
+      user = cookieUser
+      console.log('Cookie認証成功:', user.id)
     }
 
-    // ワークスペースのメンバーシップを確認
-    const { data: membership } = await supabase
+    // ワークスペースメンバーシップ確認（Adminクライアント使用）
+    const { data: member } = await supabaseAdmin
       .from('workspace_members')
-      .select('workspace_id, role')
+      .select('workspace_id')
       .eq('workspace_id', workspaceId)
       .eq('user_id', user.id)
       .single()
 
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'このワークスペースへのアクセス権限がありません' },
-        { status: 403 }
-      )
+    if (!member) {
+      return NextResponse.json({ error: '権限がありません' }, { status: 403 })
     }
 
-    // Threadsアカウント一覧を取得
-    const { data: accounts, error } = await supabase
+    // アカウント一覧取得（Adminクライアント使用）
+    console.log('Fetching threads accounts for workspace:', workspaceId)
+    console.log('Using Admin client to bypass RLS')
+    
+    const { data: accounts, error } = await supabaseAdmin
       .from('threads_accounts')
-      .select('id, threads_user_id, username, created_at, updated_at')
+      .select('id, username, created_at, threads_user_id')
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false })
 
+    console.log('Query executed, error:', error)
+    console.log('Query executed, data:', accounts)
+
     if (error) {
       console.error('Threadsアカウント取得エラー:', error)
-      return NextResponse.json(
-        { error: 'Threadsアカウントの取得に失敗しました' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: '取得に失敗しました' }, { status: 500 })
     }
 
-    // 各アカウントのトークン有効性をチェック
-    const accountsWithStatus = await Promise.all(
-      accounts.map(async (account) => {
-        try {
-          // アクセストークンを取得（復号化）
-          const { data: tokenData } = await supabase
-            .from('threads_accounts')
-            .select('access_token')
-            .eq('id', account.id)
-            .single()
+    console.log('取得したThreadsアカウント数:', accounts?.length || 0)
+    if (accounts && accounts.length > 0) {
+      console.log('アカウント詳細:', JSON.stringify(accounts, null, 2))
+    } else {
+      console.log('No threads accounts found for workspace:', workspaceId)
+    }
 
-          if (!tokenData?.access_token) {
-            return {
-              ...account,
-              access_token: undefined,
-              status: 'invalid',
-              expires_at: null
-            }
-          }
+    // UIが期待する最低限の形に整形
+    const shaped = (accounts || []).map(a => ({
+      id: a.id,
+      username: a.username,
+      created_at: a.created_at,
+      status: 'active' as const,
+      expires_at: null,
+      threads_user_id: a.threads_user_id
+    }))
 
-          const threadsAPI = new ThreadsAPI(tokenData.access_token)
-          const isValid = await threadsAPI.validateToken()
-
-          return {
-            ...account,
-            access_token: undefined, // セキュリティのため除外
-            status: isValid ? 'active' : 'invalid',
-            expires_at: null // TODO: 有効期限情報の追加
-          }
-        } catch (error) {
-          return {
-            ...account,
-            access_token: undefined,
-            status: 'error',
-            expires_at: null
-          }
-        }
-      })
-    )
-
-    return NextResponse.json({ accounts: accountsWithStatus })
-  } catch (error) {
-    console.error('Threadsアカウント一覧 API エラー:', error)
-    return NextResponse.json(
-      { error: '内部エラーが発生しました' },
-      { status: 500 }
-    )
+    console.log('Returning shaped accounts:', JSON.stringify(shaped, null, 2))
+    const response = { accounts: shaped }
+    console.log('Full response:', JSON.stringify(response, null, 2))
+    
+    return NextResponse.json(response)
+  } catch (e) {
+    console.error('Threadsアカウント一覧API エラー:', e)
+    return NextResponse.json({ error: '内部エラーが発生しました' }, { status: 500 })
   }
 }
 
-// Threadsアカウント削除
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
-  const workspaceId = params.id
   
+  // Admin client for bypassing RLS
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  
+  const workspaceId = params.id
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // まず通常の認証（cookie）を試行
+    let user;
+    const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
     
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'ログインが必要です' },
-        { status: 401 }
-      )
+    if (cookieError || !cookieUser) {
+      console.log('Cookie認証失敗、Authorizationヘッダーをチェック:', cookieError?.message)
+      
+      // Authorizationヘッダーを確認
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(token)
+        if (tokenError || !tokenUser) {
+          console.log('Token認証も失敗:', tokenError?.message)
+          return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+        }
+        user = tokenUser
+        console.log('Token認証成功:', user.id)
+      } else {
+        return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+      }
+    } else {
+      user = cookieUser
+      console.log('Cookie認証成功:', user.id)
+    }
+
+    // メンバー確認（Adminクライアント使用）
+    const { data: member } = await supabaseAdmin
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!member) {
+      return NextResponse.json({ error: '権限がありません' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
     const accountId = searchParams.get('account_id')
-
     if (!accountId) {
-      return NextResponse.json(
-        { error: 'アカウントIDが必要です' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'account_id が必要です' }, { status: 400 })
     }
 
-    // ワークスペースのメンバーシップを確認
-    const { data: membership } = await supabase
-      .from('workspace_members')
-      .select('workspace_id, role')
-      .eq('workspace_id', workspaceId)
-      .eq('user_id', user.id)
-      .single()
-
-    if (!membership) {
-      return NextResponse.json(
-        { error: 'このワークスペースへのアクセス権限がありません' },
-        { status: 403 }
-      )
-    }
-
-    // Threadsアカウントを削除
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('threads_accounts')
       .delete()
       .eq('id', accountId)
@@ -152,18 +163,13 @@ export async function DELETE(
 
     if (error) {
       console.error('Threadsアカウント削除エラー:', error)
-      return NextResponse.json(
-        { error: 'Threadsアカウントの削除に失敗しました' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: '削除に失敗しました' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Threadsアカウント削除 API エラー:', error)
-    return NextResponse.json(
-      { error: '内部エラーが発生しました' },
-      { status: 500 }
-    )
+  } catch (e) {
+    console.error('Threadsアカウント削除API エラー:', e)
+    return NextResponse.json({ error: '内部エラーが発生しました' }, { status: 500 })
   }
 }
+

@@ -119,6 +119,62 @@ export class ThreadsAPI {
   }
 }
 
+// 投稿関連レスポンス型
+interface ThreadsCreationResponse {
+  id: string // creation_id or container id
+}
+
+interface ThreadsPublishResponse {
+  id: string // published thread id
+}
+
+export class ThreadsContentAPI extends ThreadsAPI {
+  // テキスト投稿を作成→公開（2段階）
+  async publishText(text: string): Promise<{ id: string }> {
+    if (!this['accessToken']) throw new Error('アクセストークンが設定されていません')
+
+    // 1) 作成ステップ
+    const createUrl = `${this['baseUrl']}/v1.0/threads`
+    const createParams = new URLSearchParams({
+      text,
+      access_token: this['accessToken'] as string,
+    })
+
+    const createRes = await fetch(createUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: createParams,
+    })
+    const createData = await createRes.json()
+    if (!createRes.ok || !createData?.id) {
+      const err = createData as ThreadsApiError
+      throw new Error(err.error?.message || '投稿の作成に失敗しました')
+    }
+
+    const creationId = (createData as ThreadsCreationResponse).id
+
+    // 2) 公開ステップ
+    const publishUrl = `${this['baseUrl']}/v1.0/threads_publish`
+    const publishParams = new URLSearchParams({
+      creation_id: creationId,
+      access_token: this['accessToken'] as string,
+    })
+
+    const publishRes = await fetch(publishUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: publishParams,
+    })
+    const publishData = await publishRes.json()
+    if (!publishRes.ok || !publishData?.id) {
+      const err = publishData as ThreadsApiError
+      throw new Error(err.error?.message || '投稿の公開に失敗しました')
+    }
+
+    return publishData as ThreadsPublishResponse
+  }
+}
+
 // OAuth認証URL生成
 export function generateThreadsAuthUrl(redirectUri: string, scopes: string[] = ['threads_basic', 'threads_content_publish']): string {
   const baseUrl = 'https://threads.net/oauth/authorize'

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateThreadsAuthUrl } from '@/lib/threads/api'
+import { getBaseUrl } from '@/lib/url'
 
 // Threads OAuth認証開始
 export async function GET(request: NextRequest) {
@@ -14,12 +15,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // リダイレクトURIを生成
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXTAUTH_URL || 'http://localhost:3002'
-    
-    const redirectUri = `${baseUrl}/api/auth/threads/callback`
+    // リダイレクトURIを生成（環境に依存せず一貫したベースURLを使用）
+    const redirectUri = `${getBaseUrl()}/api/auth/threads/callback`
 
     // OAuth認証URLを生成（workspaceIdをstateパラメータとして含める）
     const authUrl = generateThreadsAuthUrl(redirectUri)

@@ -291,8 +291,8 @@ export default function SettingsPage() {
             <h4 className="font-medium text-blue-900 mb-2">連携の手順</h4>
             <ol className="text-sm text-blue-800 space-y-1 ml-4 list-decimal">
               <li>「Threadsと連携」ボタンをクリック</li>
-              <li>Threadsにログインして認証</li>
-              <li>アプリケーションへのアクセスを許可</li>
+              <li>Threads APIの認証情報を入力</li>
+              <li>Client ID、Client Secret、Access Tokenを設定</li>
               <li>ユーザー名と有効期限が表示されて連携完了</li>
             </ol>
           </div>

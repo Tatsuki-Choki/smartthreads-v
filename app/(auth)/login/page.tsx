@@ -20,15 +20,48 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     
-    const result = await signIn(email, password)
+    console.log('ログイン試行開始:', { email })
     
-    if (result.success) {
-      router.push('/dashboard')
-    } else {
-      setError(result.error || 'ログインに失敗しました')
+    try {
+      const result = await signIn(email, password)
+      console.log('ログイン結果:', result)
+      
+      if (result.success) {
+        console.log('ログイン成功、初期化処理を実行')
+        
+        // ユーザーとワークスペースの初期化
+        try {
+          const initResponse = await fetch('/api/auth/initialize', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          })
+          
+          const initData = await initResponse.json()
+          console.log('初期化結果:', initData)
+        } catch (initError) {
+          console.error('初期化エラー（続行）:', initError)
+        }
+        
+        // リダイレクト前に少し待機してセッションが確立されるのを待つ
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // 強制的にページをリロードしてリダイレクト
+        // 一時的にセッション情報をローカルストレージに保存（テスト用）
+        localStorage.setItem('test_user', JSON.stringify({ email, loggedIn: true }))
+        window.location.href = '/dashboard'
+      } else {
+        console.error('ログイン失敗:', result.error)
+        setError(result.error || 'ログインに失敗しました')
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('ログイン処理中のエラー:', error)
+      setError('ログイン処理中にエラーが発生しました')
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (

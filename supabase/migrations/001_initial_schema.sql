@@ -5,6 +5,8 @@
 CREATE TABLE IF NOT EXISTS workspaces (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
+    owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    slug TEXT UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -40,16 +42,24 @@ CREATE TABLE IF NOT EXISTS posts (
     published_at TIMESTAMP WITH TIME ZONE,
     threads_post_id TEXT,
     error_message TEXT,
+    -- スレッド投稿関連フィールド
+    parent_post_id UUID REFERENCES posts(id) ON DELETE SET NULL,
+    thread_root_id UUID REFERENCES posts(id) ON DELETE SET NULL,
+    thread_position INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- インデックス作成
+CREATE INDEX IF NOT EXISTS idx_workspaces_owner_id ON workspaces(owner_id);
+CREATE INDEX IF NOT EXISTS idx_workspaces_slug ON workspaces(slug);
 CREATE INDEX IF NOT EXISTS idx_workspace_members_user_id ON workspace_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_threads_accounts_workspace_id ON threads_accounts(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_posts_workspace_id ON posts(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status);
 CREATE INDEX IF NOT EXISTS idx_posts_scheduled_at ON posts(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_posts_thread_root_id ON posts(thread_root_id);
+CREATE INDEX IF NOT EXISTS idx_posts_parent_post_id ON posts(parent_post_id);
 
 -- updated_at自動更新関数
 CREATE OR REPLACE FUNCTION update_updated_at_column()
