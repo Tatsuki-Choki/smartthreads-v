@@ -86,7 +86,9 @@
       "mcp__serena__write_memory",
       "WebFetch(domain:smartthreads-v.vercel.app)",
       "Bash(git commit:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(vercel env:*)",
+      "mcp__secrets__sampleLLM"
     ],
     "deny": []
   }
