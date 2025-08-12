@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -448,9 +449,11 @@ export default function NewPostPage() {
                       <div className="grid grid-cols-3 gap-4">
                         {mediaUploads.map((media, index) => (
                           <div key={media.id} className="relative">
-                            <img 
+                            <Image 
                               src={media.public_url} 
                               alt={media.file_name}
+                              width={200}
+                              height={128}
                               className="w-full h-32 object-cover rounded"
                             />
                             <button
@@ -572,9 +575,11 @@ export default function NewPostPage() {
                   {carouselItems.map((item, index) => (
                     <div key={index} className="flex gap-4 p-4 border rounded">
                       {item.media ? (
-                        <img 
+                        <Image 
                           src={item.media.public_url} 
                           alt={`Item ${index + 1}`}
+                          width={96}
+                          height={96}
                           className="w-24 h-24 object-cover rounded"
                         />
                       ) : (
@@ -669,9 +674,11 @@ export default function NewPostPage() {
                           <div className="flex gap-2 mt-2">
                             {post.media.map((m, mIndex) => (
                               <div key={m.id} className="relative">
-                                <img 
+                                <Image 
                                   src={m.public_url} 
                                   alt={m.file_name}
+                                  width={64}
+                                  height={64}
                                   className="w-16 h-16 object-cover rounded"
                                 />
                               </div>

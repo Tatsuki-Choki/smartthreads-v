@@ -33,40 +33,40 @@ export default function EditScheduledPostPage({ params }: { params: { id: string
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/posts/${params.id}`)
+        
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.error || '投稿の取得に失敗しました')
+        }
+  
+        const data = await response.json()
+        setPost(data)
+        setContent(data.content)
+        
+        // 日時フォーマットを調整
+        if (data.scheduled_at) {
+          const date = new Date(data.scheduled_at)
+          const localDatetime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16)
+          setScheduledAt(localDatetime)
+        }
+      } catch (error) {
+        console.error('投稿取得エラー:', error)
+        setError(error instanceof Error ? error.message : '投稿の取得に失敗しました')
+      } finally {
+        setLoading(false)
+      }
+    }
+
     if (currentWorkspace) {
       fetchPost()
     }
   }, [currentWorkspace, params.id])
-
-  const fetchPost = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/posts/${params.id}`)
-      
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || '投稿の取得に失敗しました')
-      }
-
-      const data = await response.json()
-      setPost(data)
-      setContent(data.content)
-      
-      // 日時フォーマットを調整
-      if (data.scheduled_at) {
-        const date = new Date(data.scheduled_at)
-        const localDatetime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-          .toISOString()
-          .slice(0, 16)
-        setScheduledAt(localDatetime)
-      }
-    } catch (error) {
-      console.error('投稿取得エラー:', error)
-      setError(error instanceof Error ? error.message : '投稿の取得に失敗しました')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSave = async () => {
     if (!content.trim()) {

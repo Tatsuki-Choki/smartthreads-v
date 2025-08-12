@@ -55,6 +55,18 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
+  // Webpack設定のカスタマイズ
+  webpack: (config, { isServer }) => {
+    // Edge Runtimeの警告を抑制
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        process: false,
+      };
+    }
+    return config;
+  },
+
   // パフォーマンス最適化
   poweredByHeader: false,
   
