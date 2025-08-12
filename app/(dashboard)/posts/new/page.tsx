@@ -42,7 +42,7 @@ interface MediaUpload {
 export default function NewPostPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { currentWorkspace, threadsAccounts, loading: wsLoading, error: wsError } = useWorkspace()
+  const { currentWorkspace, threadsAccounts, loading: wsLoading, error: wsError, checkingThreads, threadsLoaded } = useWorkspace()
   const { toast } = useToast()
   const [content, setContent] = useState('')
   const [isScheduled, setIsScheduled] = useState(false)
@@ -338,7 +338,29 @@ export default function NewPostPage() {
       <div className="container max-w-4xl mx-auto py-8 px-4">
         <Card>
           <CardContent className="pt-6">
-            読み込み中...
+            <div className="flex flex-col items-center space-y-4">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">アカウント情報を読み込み中...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Threads連携状態確認中の表示
+  if (checkingThreads && !threadsLoaded) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">Threads連携状態を確認中...</p>
+              <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs">
+                <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

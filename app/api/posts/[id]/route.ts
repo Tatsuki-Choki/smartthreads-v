@@ -17,10 +17,24 @@ export async function GET(
   const supabase = createServerSupabaseClient()
   
   try {
-    // 認証チェック
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+    // 認証チェック（Cookie + Authorization両対応）
+    let user;
+    const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
+    
+    if (cookieError || !cookieUser) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(token)
+        if (tokenError || !tokenUser) {
+          return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+        }
+        user = tokenUser
+      } else {
+        return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+      }
+    } else {
+      user = cookieUser
     }
 
     const postId = params.id
@@ -174,14 +188,30 @@ export async function PATCH(
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
   const postId = params.id
+  
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+    // 認証チェック（Cookie + Authorization両対応）
+    let user;
+    const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser()
+    
+    if (cookieError || !cookieUser) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7)
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseAdmin.auth.getUser(token)
+        if (tokenError || !tokenUser) {
+          return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+        }
+        user = tokenUser
+      } else {
+        return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
+      }
+    } else {
+      user = cookieUser
     }
 
-    // Load post to get workspace_id for membership check
-    const { data: post, error: fetchError } = await supabase
+    // Load post to get workspace_id for membership check (Adminクライアント使用)
+    const { data: post, error: fetchError } = await supabaseAdmin
       .from('posts')
       .select('id, workspace_id')
       .eq('id', postId)
@@ -190,7 +220,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: '投稿が見つかりません' }, { status: 404 })
     }
 
-    const { data: member } = await supabase
+    const { data: member } = await supabaseAdmin
       .from('workspace_members')
       .select('workspace_id')
       .eq('workspace_id', post.workspace_id)
@@ -200,7 +230,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: '権限がありません' }, { status: 403 })
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('posts')
       .delete()
       .eq('id', postId)

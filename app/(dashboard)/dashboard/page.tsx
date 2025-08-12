@@ -141,7 +141,6 @@ export default function DashboardPage() {
       </div>
       
       {renderStatsCards()}
-      {renderRecentActivity()}
     </div>
   )
 
@@ -211,45 +210,4 @@ export default function DashboardPage() {
     )
   }
 
-  function renderRecentActivity() {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>最近の投稿</CardTitle>
-            <CardDescription>
-              直近の投稿活動を確認
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              まだ投稿がありません。
-              <Link href="/posts/new" className="text-primary hover:underline ml-1">
-                最初の投稿を作成
-              </Link>
-              してみましょう。
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>予約投稿</CardTitle>
-            <CardDescription>
-              今後の予定されている投稿
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              予約投稿がありません。
-              <Link href="/posts/new" className="text-primary hover:underline ml-1">
-                投稿をスケジュール
-              </Link>
-              してみましょう。
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 }
