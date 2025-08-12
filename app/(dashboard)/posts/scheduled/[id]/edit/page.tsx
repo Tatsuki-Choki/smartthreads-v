@@ -36,14 +36,22 @@ export default function EditScheduledPostPage({ params }: { params: { id: string
     const fetchPost = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/posts/${params.id}`)
+        console.log('編集対象の投稿ID:', params.id)
+        
+        const response = await fetch(`/api/posts/${params.id}`, {
+          headers: {
+            'x-workspace-id': currentWorkspace?.id || '',
+          }
+        })
         
         if (!response.ok) {
           const data = await response.json()
+          console.error('API エラーレスポンス:', data)
           throw new Error(data.error || '投稿の取得に失敗しました')
         }
   
         const data = await response.json()
+        console.log('取得した投稿データ:', data)
         setPost(data)
         setContent(data.content)
         
@@ -95,6 +103,7 @@ export default function EditScheduledPostPage({ params }: { params: { id: string
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'x-workspace-id': currentWorkspace?.id || '',
         },
         body: JSON.stringify({
           content,

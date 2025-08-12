@@ -124,9 +124,19 @@ export async function POST(request: NextRequest) {
       content,
       scheduled_at,
       parent_post_id,
+      // メディア関連フィールドは今後実装予定
+      // media_type = 'TEXT',
+      // media_urls = [],
+      // carousel_items = [],
     } = body || {}
 
-    console.log('投稿作成リクエスト:', { workspace_id, threads_account_id, content: content?.length + '文字', scheduled_at, parent_post_id })
+    console.log('投稿作成リクエスト:', { 
+      workspace_id, 
+      threads_account_id, 
+      content: content?.length + '文字', 
+      scheduled_at, 
+      parent_post_id
+    })
 
     if (!workspace_id || !threads_account_id || !content || typeof content !== 'string') {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
@@ -187,6 +197,7 @@ export async function POST(request: NextRequest) {
 
     // データベースに投稿を保存（Adminクライアント使用）
     // parent_post_id関連のフィールドは一時的に除外
+    // メディア関連カラムも一時的に除外（マイグレーション実行まで）
     const insertData: any = {
       workspace_id,
       threads_account_id,
@@ -194,6 +205,10 @@ export async function POST(request: NextRequest) {
       status,
       scheduled_at: scheduled_at || null,
       published_at: isImmediatePost ? new Date().toISOString() : null,
+      // TODO: マイグレーション実行後に有効化
+      // media_type: media_type || 'TEXT',
+      // media_urls: media_urls || [],
+      // carousel_items: carousel_items || [],
     }
     
     // parent_post_idが指定されている場合のみツリー関連フィールドを追加

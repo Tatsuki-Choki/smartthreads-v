@@ -1,4 +1,4 @@
--- パフォーマンス最適化のためのインデックス追加
+-- パフォーマンス最適化のためのインデックス追加（シンプル版）
 -- ============================================
 
 -- 複合インデックス
@@ -15,11 +15,7 @@ ON posts(workspace_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_account_status 
 ON posts(threads_account_id, status);
 
--- comments: 返信処理の高速化
-CREATE INDEX IF NOT EXISTS idx_comments_workspace_replied 
-ON comments(workspace_id, is_replied, created_at DESC)
-WHERE is_replied = false;
-
+-- comments: 投稿IDと作成日時
 CREATE INDEX IF NOT EXISTS idx_comments_post_created 
 ON comments(threads_post_id, created_at DESC);
 
@@ -28,22 +24,13 @@ CREATE INDEX IF NOT EXISTS idx_auto_reply_rules_active_priority
 ON auto_reply_rules(workspace_id, is_active, priority DESC)
 WHERE is_active = true;
 
--- reply_queue: キュー処理の最適化
-CREATE INDEX IF NOT EXISTS idx_reply_queue_processing 
-ON reply_queue(status, scheduled_at)
-WHERE status IN ('pending', 'processing');
-
+-- reply_queue: ワークスペースとステータス
 CREATE INDEX IF NOT EXISTS idx_reply_queue_workspace_status 
 ON reply_queue(workspace_id, status, created_at DESC);
 
 -- reply_pools: ランダム選択の高速化
 CREATE INDEX IF NOT EXISTS idx_reply_pools_rule_active_weight 
 ON reply_pools(rule_id, is_active, weight DESC)
-WHERE is_active = true;
-
--- threads_accounts: アクティブアカウントの検索
-CREATE INDEX IF NOT EXISTS idx_threads_accounts_workspace_active 
-ON threads_accounts(workspace_id, is_active)
 WHERE is_active = true;
 
 -- media_uploads: メディア管理の最適化
@@ -58,11 +45,6 @@ ON system_events(workspace_id, event_type, occurred_at DESC);
 CREATE INDEX IF NOT EXISTS idx_system_events_error_time 
 ON system_events(severity, occurred_at DESC)
 WHERE severity IN ('error', 'critical');
-
--- notification_queue: 通知処理の最適化
-CREATE INDEX IF NOT EXISTS idx_notification_queue_pending_scheduled 
-ON notification_queue(status, scheduled_at)
-WHERE status = 'pending';
 
 -- 部分インデックス（特定条件での高速化）
 -- ============================================
@@ -82,15 +64,8 @@ CREATE INDEX IF NOT EXISTS idx_failed_reply_queue
 ON reply_queue(workspace_id, created_at DESC)
 WHERE status = 'failed';
 
--- GINインデックス（JSON/配列検索用）
+-- GINインデックス（配列検索用）
 -- ============================================
-
--- JSONBフィールドの検索最適化
-CREATE INDEX IF NOT EXISTS idx_posts_metadata_gin 
-ON posts USING gin(metadata);
-
-CREATE INDEX IF NOT EXISTS idx_system_events_metadata_gin 
-ON system_events USING gin(metadata);
 
 -- 配列フィールドの検索最適化
 CREATE INDEX IF NOT EXISTS idx_auto_reply_rules_keywords_gin 
@@ -110,7 +85,6 @@ ANALYZE reply_queue;
 ANALYZE reply_pools;
 ANALYZE threads_accounts;
 ANALYZE system_events;
-ANALYZE notification_queue;
 
 -- ビューの作成（よく使うクエリの最適化）
 -- ============================================
@@ -136,7 +110,7 @@ SELECT
     r.id as rule_id,
     r.name as rule_name,
     COUNT(DISTINCT c.id) as total_comments,
-    COUNT(DISTINCT CASE WHEN c.is_replied THEN c.id END) as replied_comments,
+    0 as replied_comments, -- is_repliedカラムが存在しないため仮の値
     COUNT(DISTINCT q.id) as queued_replies,
     COUNT(DISTINCT CASE WHEN q.status = 'completed' THEN q.id END) as successful_replies,
     COUNT(DISTINCT CASE WHEN q.status = 'failed' THEN q.id END) as failed_replies,
@@ -172,7 +146,3 @@ BEGIN
     REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_stats;
 END;
 $$ LANGUAGE plpgsql;
-
--- 定期的なリフレッシュのためのトリガー設定（必要に応じて）
--- Supabaseのpg_cronを使用する場合：
--- SELECT cron.schedule('refresh-mv-daily-stats', '0 1 * * *', 'SELECT refresh_materialized_views();');

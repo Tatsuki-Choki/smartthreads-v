@@ -89,7 +89,8 @@
       "Bash(grep:*)",
       "Bash(vercel env:*)",
       "mcp__secrets__sampleLLM",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres -f supabase/migrations/021_add_media_columns_to_posts.sql)"
     ],
     "deny": []
   }

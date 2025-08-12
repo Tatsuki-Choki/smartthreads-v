@@ -444,9 +444,9 @@ export default function NewPostPage() {
                 
                 <div className="space-y-2">
                   <Label>画像をアップロード</Label>
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <div className="border-2 border-dashed rounded-lg p-4 sm:p-6 text-center">
                     {mediaUploads.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
                         {mediaUploads.map((media, index) => (
                           <div key={media.id} className="relative">
                             <Image 
@@ -454,7 +454,7 @@ export default function NewPostPage() {
                               alt={media.file_name}
                               width={200}
                               height={128}
-                              className="w-full h-32 object-cover rounded"
+                              className="w-full h-24 sm:h-32 object-cover rounded"
                             />
                             <button
                               type="button"
@@ -470,7 +470,7 @@ export default function NewPostPage() {
                       <div>
                         <ImageIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                         <p className="text-sm text-gray-500 mb-2">
-                          クリックまたはドラッグ＆ドロップで画像をアップロード
+                          タップして画像を選択
                         </p>
                       </div>
                     )}
@@ -483,9 +483,9 @@ export default function NewPostPage() {
                       id="image-upload"
                       disabled={uploading}
                     />
-                    <Label htmlFor="image-upload" className="cursor-pointer">
+                    <Label htmlFor="image-upload" className="cursor-pointer inline-block mt-2">
                       <Button type="button" variant="outline" disabled={uploading} asChild>
-                        <span>
+                        <span className="w-full sm:w-auto">
                           <Upload className="w-4 h-4 mr-2" />
                           {uploading ? 'アップロード中...' : '画像を選択'}
                         </span>
