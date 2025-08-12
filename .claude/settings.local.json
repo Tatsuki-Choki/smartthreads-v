@@ -85,7 +85,8 @@
       "mcp__filesystem__create_directory",
       "mcp__serena__write_memory",
       "WebFetch(domain:smartthreads-v.vercel.app)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

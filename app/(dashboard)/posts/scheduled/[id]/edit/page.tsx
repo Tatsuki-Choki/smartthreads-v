@@ -23,7 +23,7 @@ interface Post {
 
 export default function EditScheduledPostPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const { workspace } = useWorkspace()
+  const { currentWorkspace } = useWorkspace()
   const [post, setPost] = useState<Post | null>(null)
   const [content, setContent] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
@@ -33,10 +33,10 @@ export default function EditScheduledPostPage({ params }: { params: { id: string
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    if (workspace) {
+    if (currentWorkspace) {
       fetchPost()
     }
-  }, [workspace, params.id])
+  }, [currentWorkspace, params.id])
 
   const fetchPost = async () => {
     try {
