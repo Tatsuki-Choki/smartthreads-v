@@ -128,9 +128,9 @@ export async function GET(request: NextRequest) {
     const workspaces = workspaceMembers
       .filter(m => m.workspaces)
       .map(m => ({
-        id: m.workspaces!.id,
-        name: m.workspaces!.name,
-        created_at: m.workspaces!.created_at,
+        id: (m.workspaces as any).id,
+        name: (m.workspaces as any).name,
+        created_at: (m.workspaces as any).created_at,
         workspace_members: [{
           role: m.role,
           created_at: m.created_at
