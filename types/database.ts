@@ -7,6 +7,10 @@ export type Database = {
           name: string
           slug?: string
           owner_id?: string
+          plan_type?: 'standard' | 'vip' | 'ultra_vip'
+          max_threads_accounts?: number
+          plan_expires_at?: string | null
+          plan_notes?: string | null
           created_at: string
           updated_at: string
         }
@@ -15,6 +19,10 @@ export type Database = {
           name: string
           slug?: string
           owner_id?: string
+          plan_type?: 'standard' | 'vip' | 'ultra_vip'
+          max_threads_accounts?: number
+          plan_expires_at?: string | null
+          plan_notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -23,6 +31,10 @@ export type Database = {
           name?: string
           slug?: string
           owner_id?: string
+          plan_type?: 'standard' | 'vip' | 'ultra_vip'
+          max_threads_accounts?: number
+          plan_expires_at?: string | null
+          plan_notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -57,6 +69,7 @@ export type Database = {
           display_name: string | null
           profile_picture_url: string | null
           status: 'active' | 'invalid' | 'error' | 'suspended'
+          is_active?: boolean
           expires_at: string | null
           created_at: string
           updated_at: string
@@ -70,6 +83,7 @@ export type Database = {
           display_name?: string | null
           profile_picture_url?: string | null
           status?: 'active' | 'invalid' | 'error' | 'suspended'
+          is_active?: boolean
           expires_at?: string | null
           created_at?: string
           updated_at?: string
@@ -83,6 +97,7 @@ export type Database = {
           display_name?: string | null
           profile_picture_url?: string | null
           status?: 'active' | 'invalid' | 'error' | 'suspended'
+          is_active?: boolean
           expires_at?: string | null
           created_at?: string
           updated_at?: string

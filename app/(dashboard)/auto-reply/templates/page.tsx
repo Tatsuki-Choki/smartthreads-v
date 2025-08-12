@@ -338,21 +338,21 @@ export default function TemplatesPage() {
                       onClick={() => insertVariable('username')}
                       className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"
                     >
-                      {{'{'}username{'}'}}
+                      {'{'}{'{'}{'}'}username{'{'}'}'}
                     </button>
                     <button
                       type="button"
                       onClick={() => insertVariable('comment')}
                       className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"
                     >
-                      {{'{'}comment{'}'}}
+                      {'{'}{'{'}{'}'}comment{'{'}'}'}
                     </button>
                     <button
                       type="button"
                       onClick={() => insertVariable('date')}
                       className="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200"
                     >
-                      {{'{'}date{'}'}}
+                      {'{'}{'{'}{'}'}date{'{'}'}'}
                     </button>
                   </div>
                   

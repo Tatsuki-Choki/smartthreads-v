@@ -135,6 +135,27 @@ export async function POST(request: NextRequest) {
       .eq('threads_user_id', userData.id)
       .single()
 
+    // 新規アカウント追加の場合は、アカウント上限をチェック
+    if (!existingAccount) {
+      const { data: planStatus } = await supabaseAdmin
+        .from('v_workspace_plan_status')
+        .select('remaining_slots, plan_type, max_threads_accounts, active_accounts_count')
+        .eq('id', workspaceId)
+        .single()
+
+      console.log('Plan status check:', planStatus)
+
+      if (planStatus && planStatus.remaining_slots <= 0) {
+        console.log('Account limit reached')
+        return NextResponse.json(
+          { 
+            error: `Threadsアカウント数が上限（${planStatus.max_threads_accounts}個）に達しています。現在${planStatus.active_accounts_count}個のアカウントが登録されています。${planStatus.plan_type === 'standard' ? 'VIPまたはUltraVIPプランへのアップグレードが必要です。' : '管理者にお問い合わせください。'}` 
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     if (existingAccount) {
       // 既存のアカウント情報を更新（Adminクライアント使用）
       console.log('Updating existing account:', existingAccount.id)

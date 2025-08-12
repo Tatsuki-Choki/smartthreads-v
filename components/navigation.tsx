@@ -14,10 +14,12 @@ import {
   FileText,
   List,
   Bot,
-  BarChart3
+  BarChart3,
+  Shield
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
+import { useEffect, useState } from 'react'
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: HomeIcon },
@@ -31,12 +33,32 @@ const navigation = [
   { name: '分析', href: '/auto-reply/analytics', icon: BarChart3 },
   { name: 'Webhookテスト', href: '/auto-reply/test', icon: List },
   { name: '設定', href: '/settings', icon: SettingsIcon },
+  { name: 'システム管理', href: '/admin', icon: Shield, adminOnly: true },
 ]
 
 export function Navigation() {
   const pathname = usePathname()
   const router = useRouter()
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      checkAdminStatus()
+    }
+  }, [user])
+
+  const checkAdminStatus = async () => {
+    try {
+      // システム管理者かどうかをAPIでチェック
+      const response = await fetch('/api/auth/check-admin')
+      const data = await response.json()
+      setIsSystemAdmin(data.isAdmin || false)
+    } catch (error) {
+      console.error('Admin status check failed:', error)
+      setIsSystemAdmin(false)
+    }
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -50,6 +72,11 @@ export function Navigation() {
       </div>
       <nav className="flex-1 px-4 pb-4 space-y-2">
         {navigation.map((item) => {
+          // 管理者専用アイテムは管理者のみ表示
+          if (item.adminOnly && !isSystemAdmin) {
+            return null
+          }
+          
           const isActive = pathname === item.href
           return (
             <Link

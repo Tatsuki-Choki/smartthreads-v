@@ -35,3 +35,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test artifacts
+/test-artifacts/
+/playwright-report/
+/test-results/
+/tests/screenshots/
+
+# screenshots (開発用スクリーンショット)
+/screenshots/manual/
+/screenshots/e2e/
+/screenshots/debug/
+/screenshots/temp/
+# READMEは残す
+!/screenshots/README.md
+
+# documentation artifacts
+/docs/images/
+/docs/sql/
+
+# IDE and local settings
+.claude/
